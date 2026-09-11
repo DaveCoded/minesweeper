@@ -1,0 +1,79 @@
+* {
+  box-sizing: border-box;
+}
+
+.grid {
+  background-color: lightgrey;
+  padding: 4px;
+  max-width: max-content;
+}
+
+.row {
+  display: flex;
+}
+
+.cell {
+  width: 24px;
+  height: 24px;
+  background-color: lightgrey;
+  background-size: 100%;
+}
+
+.closed {
+  background-image: url("/images/closed.svg");
+}
+
+.pressed {
+  border-top: 1px solid grey;
+  border-left: 1px solid grey;
+  border-bottom: none;
+  border-right: none;
+}
+
+.opened {
+  border: none;
+}
+
+.opened.blank {
+  background-image: url("/images/blank.svg");
+}
+
+.opened.number-1 {
+  background-image: url("/images/number-1.svg");
+}
+
+.opened.number-2 {
+  background-image: url("/images/number-2.svg");
+}
+
+.opened.number-3 {
+  background-image: url("/images/number-3.svg");
+}
+
+.opened.number-4 {
+  background-image: url("/images/number-4.svg");
+}
+
+.opened.number-5 {
+  background-image: url("/images/number-5.svg");
+}
+
+.opened.number-6 {
+  background-image: url("/images/number-6.svg");
+}
+
+.opened.number-7 {
+  background-image: url("/images/number-7.svg");
+}
+
+.opened.number-8 {
+  background-image: url("/images/number-8.svg");
+}
+
+.flagged {
+  background-image: url("/images/flag.svg");
+}
+
+.opened.mine-red {
+  background-image: url("images/mine-red.svg");
+}
