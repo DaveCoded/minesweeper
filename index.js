@@ -1,5 +1,3 @@
-// todo: update openCell to just update the game board state and then call renderCell.
-
 const DEFAULT_ROW_COUNT = 16;
 const DEFAULT_COLUMN_COUNT = 30;
 const DEFAULT_MINE_COUNT = 99;
@@ -72,8 +70,7 @@ const gameBoardState = [
 
 // Mark mine locations on board state
 mineCellLocations.forEach((cellVector) => {
-  const coordinates = cellVector.split("_");
-  const [x, y] = coordinates.map((c) => Number(c));
+  const [x, y] = cellVector.split("_");
   gameBoardState[x][y][0] = MINE_STRING;
 });
 
@@ -117,7 +114,7 @@ console.log({ gameBoardState });
 // When a cell is opened, apply a class that sets a background image (empty, 1, 2, mine etc.)
 
 function cellMouseDown(ev) {
-  const [x, y] = ev.target.id.split("_");
+  const [x, y] = getCoordsFromEl(ev.target);
   const [_, status] = gameBoardState[x][y];
 
   // If cell is flagged or opened, it can't be pressed
@@ -132,7 +129,7 @@ function cellMouseUp(ev) {
   // If so, check each unopened cell. Flagged mines stay flagged and closed. Unflagged mines explode.
   // Any other unopened cell gets opened and their number shown. Blanks cause floodfill as usual.
   // If there are too many or two few adjacent flags, return;
-  const [x, y] = ev.target.id.split("_");
+  const [x, y] = getCoordsFromEl(ev.target);
   const [_, status] = gameBoardState[x][y];
 
   if (status === "flagged") return;
@@ -158,13 +155,12 @@ function cellMouseLeave(ev) {
 
 function cellRightClick(ev) {
   ev.preventDefault();
-  const [x, y] = ev.target.id.split("_");
+  const [x, y] = getCoordsFromEl(ev.target);
   toggleFlag(x, y);
-  // todo: right-clicking on an opened cell adds a class of "pressed" which is annoying.
 }
 
 function openCell(startEl) {
-  const [startRow, startCol] = startEl.id.split("_").map(Number);
+  const [startRow, startCol] = getCoordsFromEl(startEl);
   const stack = [[startRow, startCol]];
 
   while (stack.length > 0) {
@@ -235,6 +231,12 @@ function renderCell(row, col) {
   }
 }
 
+/**
+ *
+ * @param {number} row row index of cell to toggle
+ * @param {number} col column index of cell to toggle
+ * @returns {undefined} just calls renderCell
+ */
 function toggleFlag(row, col) {
   const cell = gameBoardState[row][col];
 
@@ -242,4 +244,16 @@ function toggleFlag(row, col) {
 
   cell[1] = cell[1] === "flagged" ? "closed" : "flagged";
   renderCell(row, col);
+}
+
+/**
+ *
+ * @param {HTMLElement} el - element representing a given cell (div) in the grid
+ * @returns {[x: number,y: number]} [x, y] coordinate tuple for a given cell in the grid
+ *
+ * Finds the element's id, which is in the form of "3_12", for instance, where
+ * 3 is the row index (so 4th row here) and 12 is the column index (13th column)
+ */
+function getCoordsFromEl(el) {
+  return el.id.split("_").map(Number);
 }
