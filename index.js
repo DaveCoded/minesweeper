@@ -163,78 +163,41 @@ function cellRightClick(ev) {
   // todo: right-clicking on an opened cell adds a class of "pressed" which is annoying.
 }
 
-function openCell(el) {
-  // ? Do I need these? Maybe removing pressed? If so, that should be handled elsewhere maybe?
-  el.classList.remove("pressed", "closed");
-  el.classList.add("opened");
+function openCell(startEl) {
+  const [startRow, startCol] = startEl.id.split("_").map(Number);
+  const stack = [[startRow, startCol]];
 
-  const [x, y] = el.id.split("_").map(Number);
-  const cellState = gameBoardState[x][y];
+  while (stack.length > 0) {
+    const [row, col] = stack.pop();
+    const [value, status] = gameBoardState[row][col];
 
-  const value = cellState[0];
-  // prevents infinite loop for recursive flood-fill
-  // TODO: try iterative queue or stack instead of recursion?
-  if (cellState[1] === "opened") return;
-  cellState[1] = "opened";
+    // Also prevents flagged cells from being opened.
+    if (status !== "closed") continue;
 
-  switch (value) {
-    case 0:
-      el.classList.add("blank");
+    gameBoardState[row][col][1] = "opened";
+    renderCell(row, col);
 
-      for (let rowOffset = -1; rowOffset <= 1; rowOffset++) {
-        for (let colOffset = -1; colOffset <= 1; colOffset++) {
-          // Ignore the current cell in the middle
-          if (rowOffset === 0 && colOffset === 0) continue;
+    // Reveal numbers, but don't expand through them.
+    if (value !== 0) continue;
 
-          const neighbourRow = x + rowOffset;
-          const neighbourCol = y + colOffset;
+    for (let rowOffset = -1; rowOffset <= 1; rowOffset++) {
+      for (let colOffset = -1; colOffset <= 1; colOffset++) {
+        if (rowOffset === 0 && colOffset === 0) continue;
 
-          const isInBounds =
-            neighbourRow > -1 &&
-            neighbourRow < gameBoardState.length &&
-            neighbourCol > -1 &&
-            neighbourCol < DEFAULT_COLUMN_COUNT;
+        const neighbourRow = row + rowOffset;
+        const neighbourCol = col + colOffset;
 
-          if (!isInBounds) continue;
+        const isInBounds =
+          neighbourRow >= 0 &&
+          neighbourRow < gameBoardState.length &&
+          neighbourCol >= 0 &&
+          neighbourCol < gameBoardState[neighbourRow].length;
 
-          // Get the element by id
-          const neighbourEl = document.getElementById(
-            `${neighbourRow}_${neighbourCol}`,
-          );
-          openCell(neighbourEl);
+        if (isInBounds) {
+          stack.push([neighbourRow, neighbourCol]);
         }
       }
-      break;
-    case 1:
-      el.classList.add("number-1");
-      break;
-    case 2:
-      el.classList.add("number-2");
-      break;
-    case 3:
-      el.classList.add("number-3");
-      break;
-    case 4:
-      el.classList.add("number-4");
-      break;
-    case 5:
-      el.classList.add("number-5");
-      break;
-    case 6:
-      el.classList.add("number-6");
-      break;
-    case 7:
-      el.classList.add("number-7");
-      break;
-    case 8:
-      el.classList.add("number-8");
-      break;
-    case "x":
-      el.classList.add("mine-red");
-      break;
-    // Game is lost. Show locations of remaining mines, stop clock, change face to dead
-    default:
-      return;
+    }
   }
 }
 
