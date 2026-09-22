@@ -5,6 +5,18 @@ const DEFAULT_MINE_COUNT = 99;
 const MINE_STRING = "x";
 
 let anyPressed = false;
+let gameStarted = false;
+let gameOver = false;
+
+let mineCount = DEFAULT_MINE_COUNT;
+
+let numRows = DEFAULT_ROW_COUNT;
+let numCols = DEFAULT_COLUMN_COUNT;
+
+let timer;
+let secondsElapsed = 0;
+
+let gameBoardState;
 
 const gridEl = document.querySelector(".grid");
 
@@ -16,6 +28,9 @@ gridEl.addEventListener("mousedown", function () {
 document.addEventListener("mouseup", function () {
   anyPressed = false;
 });
+
+const faceButton = document.querySelector(".face");
+faceButton.addEventListener("click", restartGame);
 
 const mineCellLocations = [];
 
@@ -53,67 +68,15 @@ function initGrid() {
 }
 
 initGrid();
-
-// Work out where to put mines by shuffling all the cell locations,
-// and taking the first [MINE_COUNT] elements to be mines
-fisherYatesShuffle(mineCellLocations);
-mineCellLocations.splice(DEFAULT_MINE_COUNT);
-
-// Initialise game board state
-const gameBoardState = [
-  ...Array.from({ length: DEFAULT_ROW_COUNT }).map(() => {
-    return Array.from({ length: DEFAULT_COLUMN_COUNT }).map(() => {
-      return [null, "closed"];
-    });
-  }),
-];
-
-// Mark mine locations on board state
-mineCellLocations.forEach((cellVector) => {
-  const [x, y] = cellVector.split("_");
-  gameBoardState[x][y][0] = MINE_STRING;
-});
-
-// Walk the grid and mark the values for cells adjacent to mines
-for (let i = 0; i < gameBoardState.length; i++) {
-  const col = gameBoardState[i];
-  for (let j = 0; j < col.length; j++) {
-    const [value] = col[j];
-    if (value === MINE_STRING) continue;
-
-    let adjacentMineCount = 0;
-
-    for (let rowOffset = -1; rowOffset <= 1; rowOffset++) {
-      for (let colOffset = -1; colOffset <= 1; colOffset++) {
-        // Ignore the current cell in the middle
-        if (rowOffset === 0 && colOffset === 0) continue;
-
-        const neighbourRow = i + rowOffset;
-        const neighbourCol = j + colOffset;
-
-        const isInBounds =
-          neighbourRow > -1 &&
-          neighbourRow < gameBoardState.length &&
-          neighbourCol > -1 &&
-          neighbourCol < col.length;
-
-        if (!isInBounds) continue;
-
-        if (gameBoardState[neighbourRow][neighbourCol][0] === MINE_STRING) {
-          adjacentMineCount++;
-        }
-      }
-    }
-
-    col[j][0] = adjacentMineCount;
-  }
-}
+initGameState();
+renderMineCount();
 
 console.log({ gameBoardState });
 
 // When a cell is opened, apply a class that sets a background image (empty, 1, 2, mine etc.)
 
 function cellMouseDown(ev) {
+  if (gameOver) return;
   const [x, y] = getCoordsFromEl(ev.target);
   const [_, status] = gameBoardState[x][y];
 
@@ -123,6 +86,16 @@ function cellMouseDown(ev) {
 }
 
 function cellMouseUp(ev) {
+  if (gameOver) return;
+  if (!gameStarted) {
+    timer = setInterval(() => {
+      secondsElapsed++;
+      renderTimer();
+    }, 1000);
+
+    gameStarted = true;
+  }
+
   if (ev.ctrlKey) return;
 
   // If the cell is already opened and it's a number, check if it has that number of adjacent flags.
@@ -130,7 +103,16 @@ function cellMouseUp(ev) {
   // Any other unopened cell gets opened and their number shown. Blanks cause floodfill as usual.
   // If there are too many or two few adjacent flags, return;
   const [x, y] = getCoordsFromEl(ev.target);
-  const [_, status] = gameBoardState[x][y];
+  const [value, status] = gameBoardState[x][y];
+
+  if (value === MINE_STRING) {
+    gameOver = true;
+    renderCell(x, y);
+    // todo: check board for any incorrect flags and set those to show the flag-wrong background
+    showIncorrectFlags();
+    clearInterval(timer);
+    renderFace();
+  }
 
   if (status === "flagged") return;
 
@@ -139,6 +121,7 @@ function cellMouseUp(ev) {
     return;
   }
 
+  // todo: implement check and open adjacent cells
   // When cell is open, check if user has flagged all the mines around and open adjacent cells if so.
   let numAdjacentFlags = 0;
 }
@@ -155,6 +138,7 @@ function cellMouseLeave(ev) {
 
 function cellRightClick(ev) {
   ev.preventDefault();
+  if (gameOver) return;
   const [x, y] = getCoordsFromEl(ev.target);
   toggleFlag(x, y);
 }
@@ -231,6 +215,39 @@ function renderCell(row, col) {
   }
 }
 
+function renderMineCount() {
+  const mineCountEl = document.querySelector(".mine-count");
+  renderDigits(mineCount, mineCountEl);
+
+  // ? What happens if you flag more than the amount of available flags?
+}
+
+function renderTimer() {
+  const timerEl = document.querySelector(".timer");
+  renderDigits(secondsElapsed, timerEl);
+}
+
+function renderDigits(count, el) {
+  // Only 3 digits available (timer won't go over 999)
+  const normalisedCount = count > 999 ? 999 : count;
+  const paddedString = String(normalisedCount).padStart(3, "0");
+  const countChildren = el.querySelectorAll("& > div");
+
+  for (let i = 0; i < paddedString.length; i++) {
+    const char = paddedString[i];
+    countChildren[i].classList = `d${char}`;
+  }
+}
+
+function renderFace() {
+  const el = document.querySelector(".face");
+  if (gameOver) {
+    el.classList.add("lose");
+  } else {
+    el.classList = ["face"];
+  }
+}
+
 /**
  *
  * @param {number} row row index of cell to toggle
@@ -242,8 +259,16 @@ function toggleFlag(row, col) {
 
   if (cell[1] === "opened") return;
 
-  cell[1] = cell[1] === "flagged" ? "closed" : "flagged";
+  if (cell[1] === "flagged") {
+    cell[1] = "closed";
+    mineCount++;
+  } else {
+    cell[1] = "flagged";
+    mineCount--;
+  }
+
   renderCell(row, col);
+  renderMineCount();
 }
 
 /**
@@ -256,4 +281,106 @@ function toggleFlag(row, col) {
  */
 function getCoordsFromEl(el) {
   return el.id.split("_").map(Number);
+}
+
+function initGameState() {
+  const mineCellLocations = [];
+
+  for (let i = 0; i < numRows; i++) {
+    for (let j = 0; j < numCols; j++) {
+      const vectorId = `${i}_${j}`;
+      mineCellLocations.push(vectorId);
+    }
+  }
+
+  // Work out where to put mines by shuffling all the cell locations,
+  // and taking the first [MINE_COUNT] elements to be mines
+  fisherYatesShuffle(mineCellLocations);
+  mineCellLocations.splice(DEFAULT_MINE_COUNT);
+
+  // Initialise game board state
+  gameBoardState = [
+    ...Array.from({ length: DEFAULT_ROW_COUNT }).map(() => {
+      return Array.from({ length: DEFAULT_COLUMN_COUNT }).map(() => {
+        return [null, "closed"];
+      });
+    }),
+  ];
+
+  mineCellLocations.forEach((cellVector) => {
+    const [x, y] = cellVector.split("_");
+    gameBoardState[x][y][0] = MINE_STRING;
+  });
+
+  // Walk the grid and mark the values for cells adjacent to mines
+  for (let i = 0; i < gameBoardState.length; i++) {
+    const col = gameBoardState[i];
+    for (let j = 0; j < col.length; j++) {
+      const [value] = col[j];
+      if (value === MINE_STRING) continue;
+
+      let adjacentMineCount = 0;
+
+      for (let rowOffset = -1; rowOffset <= 1; rowOffset++) {
+        for (let colOffset = -1; colOffset <= 1; colOffset++) {
+          // Ignore the current cell in the middle
+          if (rowOffset === 0 && colOffset === 0) continue;
+
+          const neighbourRow = i + rowOffset;
+          const neighbourCol = j + colOffset;
+
+          const isInBounds =
+            neighbourRow > -1 &&
+            neighbourRow < gameBoardState.length &&
+            neighbourCol > -1 &&
+            neighbourCol < col.length;
+
+          if (!isInBounds) continue;
+
+          if (gameBoardState[neighbourRow][neighbourCol][0] === MINE_STRING) {
+            adjacentMineCount++;
+          }
+        }
+      }
+
+      col[j][0] = adjacentMineCount;
+    }
+  }
+}
+
+function restartGame() {
+  anyPressed = false;
+  gameStarted = false;
+  gameOver = false;
+  mineCount = DEFAULT_MINE_COUNT;
+  clearInterval(timer);
+  secondsElapsed = 0;
+
+  renderFace();
+  renderTimer();
+  renderMineCount();
+  initGameState();
+
+  document.querySelectorAll(".cell").forEach((cell) => {
+    const [row, col] = getCoordsFromEl(cell);
+    renderCell(row, col);
+  });
+}
+
+function showIncorrectFlags() {
+  // Loop through each cell
+  // If cell is not mine and is flagged
+  // Add "mine-wrong" class to element?
+  for (let i = 0; i < numRows; i++) {
+    for (let j = 0; j < numCols; j++) {
+      const [value, status] = gameBoardState[i][j];
+      if (value !== MINE_STRING && status === "flagged") {
+        console.log("incorrect flag found");
+        const el = document.getElementById(`${i}_${j}`);
+        console.log("🚀 ~ showIncorrectFlags ~ el:", el);
+        el.classList.add("mine-wrong");
+        // renderCell(i, j);
+      }
+    }
+  }
 }

@@ -74,6 +74,92 @@
   background-image: url("/images/flag.svg");
 }
 
+.flagged.mine-wrong {
+  background-image: url("/images/mine-wrong.svg");
+}
+
 .opened.mine-red {
-  background-image: url("images/mine-red.svg");
+  background-image: url("/images/mine-red.svg");
+}
+
+.container {
+  width: fit-content;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.nums-background {
+  width: 62px;
+  height: 38px;
+  background-image: url("/images/nums-background.svg");
+  background-size: 100%;
+
+  display: flex;
+  justify-content: space-between;
+  padding: 3px;
+}
+
+.nums-background > div {
+  width: 16px;
+  height: 32px;
+  background-size: 100% 100%;
+}
+
+.d0 {
+  background-image: url("/images/d0.svg");
+}
+
+.d1 {
+  background-image: url("/images/d1.svg");
+}
+
+.d2 {
+  background-image: url("/images/d2.svg");
+}
+
+.d3 {
+  background-image: url("/images/d3.svg");
+}
+
+.d4 {
+  background-image: url("/images/d4.svg");
+}
+
+.d5 {
+  background-image: url("/images/d5.svg");
+}
+
+.d6 {
+  background-image: url("/images/d6.svg");
+}
+
+.d7 {
+  background-image: url("/images/d7.svg");
+}
+
+.d8 {
+  background-image: url("/images/d8.svg");
+}
+
+.d9 {
+  background-image: url("/images/d9.svg");
+}
+
+.face {
+  width: 39px;
+  height: 39px;
+  background-image: url("/images/face-unpressed.svg");
+  background-size: 100%;
+}
+
+.face:active {
+  background-image: url("/images/face-pressed.svg");
+}
+
+.face.lose {
+  background-image: url("/images/face-lose.svg");
 }
