@@ -105,25 +105,86 @@ function cellMouseUp(ev) {
   const [x, y] = getCoordsFromEl(ev.target);
   const [value, status] = gameBoardState[x][y];
 
+  if (status === "flagged") return;
+
   if (value === MINE_STRING) {
     gameOver = true;
     renderCell(x, y);
-    // todo: check board for any incorrect flags and set those to show the flag-wrong background
     showIncorrectFlags();
     clearInterval(timer);
     renderFace();
   }
 
-  if (status === "flagged") return;
-
   if (status === "closed") {
-    openCell(ev.target);
+    openCell(x, y);
     return;
   }
 
-  // todo: implement check and open adjacent cells
-  // When cell is open, check if user has flagged all the mines around and open adjacent cells if so.
   let numAdjacentFlags = 0;
+
+  for (let rowOffset = -1; rowOffset <= 1; rowOffset++) {
+    for (let colOffset = -1; colOffset <= 1; colOffset++) {
+      if (rowOffset === 0 && colOffset === 0) continue;
+
+      const neighbourRow = x + rowOffset;
+      const neighbourCol = y + colOffset;
+
+      const isInBounds =
+        neighbourRow >= 0 &&
+        neighbourRow < gameBoardState.length &&
+        neighbourCol >= 0 &&
+        neighbourCol < gameBoardState[neighbourRow].length;
+
+      if (!isInBounds) continue;
+
+      const [_, adjacentCellStatus] =
+        gameBoardState[neighbourRow][neighbourCol];
+
+      if (adjacentCellStatus === "flagged") {
+        numAdjacentFlags++;
+      }
+    }
+  }
+
+  if (numAdjacentFlags === value) {
+    revealAdjacentCells(x, y);
+  }
+}
+
+function revealAdjacentCells(x, y) {
+  console.log("reveal!");
+  for (let rowOffset = -1; rowOffset <= 1; rowOffset++) {
+    for (let colOffset = -1; colOffset <= 1; colOffset++) {
+      if (rowOffset === 0 && colOffset === 0) continue;
+
+      const neighbourRow = x + rowOffset;
+      const neighbourCol = y + colOffset;
+
+      const isInBounds =
+        neighbourRow >= 0 &&
+        neighbourRow < gameBoardState.length &&
+        neighbourCol >= 0 &&
+        neighbourCol < gameBoardState[neighbourRow].length;
+
+      if (!isInBounds) continue;
+
+      const [value, status] = gameBoardState[neighbourRow][neighbourCol];
+
+      if (value === MINE_STRING) {
+        if (status === "flagged") {
+          continue;
+        }
+        // todo: extract into gameOver function
+        gameOver = true;
+        renderCell(x, y);
+        showIncorrectFlags();
+        clearInterval(timer);
+        renderFace();
+      }
+
+      openCell(neighbourRow, neighbourCol);
+    }
+  }
 }
 
 function cellMouseEnter(ev) {
@@ -143,8 +204,7 @@ function cellRightClick(ev) {
   toggleFlag(x, y);
 }
 
-function openCell(startEl) {
-  const [startRow, startCol] = getCoordsFromEl(startEl);
+function openCell(startRow, startCol) {
   const stack = [[startRow, startCol]];
 
   while (stack.length > 0) {
