@@ -2,6 +2,11 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  height: 100%;
+}
+
 .grid {
   background-color: lightgrey;
   padding: 4px;
@@ -87,7 +92,12 @@
 }
 
 .container {
-  width: fit-content;
+  height: 100%;
+  width: 100%;
+  margin: auto;
+  display: grid;
+  place-content: center;
+  transform: translateY(-10%);
 }
 
 .header {

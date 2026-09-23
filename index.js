@@ -1,6 +1,6 @@
 const DEFAULT_ROW_COUNT = 16;
 const DEFAULT_COLUMN_COUNT = 30;
-const DEFAULT_MINE_COUNT = 4;
+const DEFAULT_MINE_COUNT = 99;
 
 const MINE_STRING = "x";
 
@@ -256,8 +256,8 @@ function openCell(startRow, startCol) {
  * all the previous elements, or with itself. Repeat until each has been swapped.
  */
 function fisherYatesShuffle(array) {
-  for (let i = array.length - 1; i >= 0; i--) {
-    const randIdx = Math.floor(Math.random() * i + 1);
+  for (let i = array.length - 1; i > 0; i--) {
+    const randIdx = Math.floor(Math.random() * (i + 1));
 
     const temp = array[i];
     array[i] = array[randIdx];
