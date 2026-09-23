@@ -82,6 +82,10 @@
   background-image: url("/images/mine-red.svg");
 }
 
+.closed.mine {
+  background-image: url("/images/mine.svg");
+}
+
 .container {
   width: fit-content;
 }
@@ -162,4 +166,8 @@
 
 .face.lose {
   background-image: url("/images/face-lose.svg");
+}
+
+.face.win {
+  background-image: url("/images/face-win.svg");
 }

@@ -1,17 +1,20 @@
 const DEFAULT_ROW_COUNT = 16;
 const DEFAULT_COLUMN_COUNT = 30;
-const DEFAULT_MINE_COUNT = 99;
+const DEFAULT_MINE_COUNT = 4;
 
 const MINE_STRING = "x";
 
 let anyPressed = false;
 let gameStarted = false;
 let gameOver = false;
+let hasWon = false;
 
 let mineCount = DEFAULT_MINE_COUNT;
 
 let numRows = DEFAULT_ROW_COUNT;
 let numCols = DEFAULT_COLUMN_COUNT;
+
+let safeCellsOpened = numRows * numCols - mineCount;
 
 let timer;
 let secondsElapsed = 0;
@@ -71,10 +74,6 @@ initGrid();
 initGameState();
 renderMineCount();
 
-console.log({ gameBoardState });
-
-// When a cell is opened, apply a class that sets a background image (empty, 1, 2, mine etc.)
-
 function cellMouseDown(ev) {
   if (gameOver) return;
   const [x, y] = getCoordsFromEl(ev.target);
@@ -111,6 +110,7 @@ function cellMouseUp(ev) {
     gameOver = true;
     renderCell(x, y);
     showIncorrectFlags();
+    revealRemainingMines();
     clearInterval(timer);
     renderFace();
   }
@@ -152,7 +152,6 @@ function cellMouseUp(ev) {
 }
 
 function revealAdjacentCells(x, y) {
-  console.log("reveal!");
   for (let rowOffset = -1; rowOffset <= 1; rowOffset++) {
     for (let colOffset = -1; colOffset <= 1; colOffset++) {
       if (rowOffset === 0 && colOffset === 0) continue;
@@ -178,6 +177,7 @@ function revealAdjacentCells(x, y) {
         gameOver = true;
         renderCell(x, y);
         showIncorrectFlags();
+        revealRemainingMines();
         clearInterval(timer);
         renderFace();
       }
@@ -216,6 +216,15 @@ function openCell(startRow, startCol) {
 
     gameBoardState[row][col][1] = "opened";
     renderCell(row, col);
+
+    safeCellsOpened--;
+
+    if (safeCellsOpened === 0) {
+      gameOver = true;
+      hasWon = true;
+      clearInterval(timer);
+      renderFace();
+    }
 
     // Reveal numbers, but don't expand through them.
     if (value !== 0) continue;
@@ -301,7 +310,9 @@ function renderDigits(count, el) {
 
 function renderFace() {
   const el = document.querySelector(".face");
-  if (gameOver) {
+  if (hasWon) {
+    el.classList.add("win");
+  } else if (gameOver) {
     el.classList.add("lose");
   } else {
     el.classList = ["face"];
@@ -412,9 +423,11 @@ function restartGame() {
   anyPressed = false;
   gameStarted = false;
   gameOver = false;
+  hasWon = false;
   mineCount = DEFAULT_MINE_COUNT;
   clearInterval(timer);
   secondsElapsed = 0;
+  safeCellsOpened = numRows * numCols - mineCount;
 
   renderFace();
   renderTimer();
@@ -428,18 +441,24 @@ function restartGame() {
 }
 
 function showIncorrectFlags() {
-  // Loop through each cell
-  // If cell is not mine and is flagged
-  // Add "mine-wrong" class to element?
   for (let i = 0; i < numRows; i++) {
     for (let j = 0; j < numCols; j++) {
       const [value, status] = gameBoardState[i][j];
       if (value !== MINE_STRING && status === "flagged") {
-        console.log("incorrect flag found");
         const el = document.getElementById(`${i}_${j}`);
-        console.log("🚀 ~ showIncorrectFlags ~ el:", el);
         el.classList.add("mine-wrong");
-        // renderCell(i, j);
+      }
+    }
+  }
+}
+
+function revealRemainingMines() {
+  for (let i = 0; i < numRows; i++) {
+    for (let j = 0; j < numCols; j++) {
+      const [value, status] = gameBoardState[i][j];
+      if (value === MINE_STRING && status === "closed") {
+        const el = document.getElementById(`${i}_${j}`);
+        el.classList.add("mine");
       }
     }
   }
